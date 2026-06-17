@@ -129,6 +129,63 @@ export const orderApi = {
     })
 }
 
+export const healthProfileApi = {
+  get: () => apiRequest('/health-profile'),
+  update: (data: any) =>
+    apiRequest('/health-profile', {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    })
+}
+
+export const reminderApi = {
+  getList: (params?: { type?: string; isRead?: string }) => {
+    const query = new URLSearchParams()
+    if (params?.type) query.append('type', params.type)
+    if (params?.isRead) query.append('isRead', params.isRead)
+    return apiRequest(`/reminders${query.toString() ? `?${query.toString()}` : ''}`)
+  },
+  generate: () =>
+    apiRequest('/reminders/generate', { method: 'POST' }),
+  markRead: (id: number) =>
+    apiRequest('/reminders?action=read', {
+      method: 'PUT',
+      body: JSON.stringify({ id })
+    }),
+  markAllRead: () =>
+    apiRequest('/reminders?action=readAll', {
+      method: 'PUT'
+    }),
+  dismiss: (id: number) =>
+    apiRequest('/reminders?action=dismiss', {
+      method: 'PUT',
+      body: JSON.stringify({ id })
+    })
+}
+
+export const reminderRuleApi = {
+  getList: (params?: { type?: string; isActive?: string }) => {
+    const query = new URLSearchParams()
+    if (params?.type) query.append('type', params.type)
+    if (params?.isActive) query.append('isActive', params.isActive)
+    return apiRequest(`/admin/reminder-rules${query.toString() ? `?${query.toString()}` : ''}`)
+  },
+  create: (data: any) =>
+    apiRequest('/admin/reminder-rules', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    }),
+  update: (id: number, data: any) =>
+    apiRequest(`/admin/reminder-rules?id=${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    }),
+  delete: (id: number) =>
+    apiRequest(`/admin/reminder-rules?id=${id}`, {
+      method: 'DELETE'
+    })
+}
+
 export const adminApi = {
   getUsers: (params?: { role?: string; page?: number; pageSize?: number; keyword?: string }) => {
     const query = new URLSearchParams()

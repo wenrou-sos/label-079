@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem -Name NUL -ErrorAction SilentlyContinue; if \\(-not \\(Test-Path NUL\\)\\) { Write-Host \"NUL 文件不存在 in filesystem\" })",
+      "Bash(git clean *)",
+      "Bash(git -c http.version=HTTP/1.1 -c http.postBuffer=524288000 push origin main)",
+      "Bash(ping -n 2 github.com)",
+      "Bash(curl -s -o NUL -w \"%{http_code}\" --connect-timeout 10 https://github.com)",
+      "Bash(curl -s -o NUL -w \"%{http_code}\" --connect-timeout 15 https://github.com)",
+      "Bash(Write-Host \"---\")",
+      "Bash(nslookup github.com)",
+      "Bash(Select-String \"Address\")",
+      "PowerShell(try { $result = curl.exe -s -o NUL -w \"%{http_code}\" --connect-timeout 15 https://github.com 2>$null; Write-Host \"curl result: $result\" } catch { Write-Host \"curl failed: $_\" }; Write-Host \"---\"; nslookup github.com 2>$null | Select-String \"Address\")",
+      "Bash(git -c http.version=HTTP/1.1 push origin main)"
+    ]
+  }
+}

@@ -55,6 +55,39 @@ export function getServiceCategoryText(category: string): string {
   return categoryMap[category] || category
 }
 
+export function getReminderTypeText(type: string): string {
+  const typeMap: Record<string, string> = {
+    MEDICATION: '用药提醒',
+    FOLLOW_UP: '复诊提醒',
+    WEATHER: '天气关怀',
+    SERVICE_RECOMMENDATION: '服务推荐',
+    GENERAL: '温馨提醒'
+  }
+  return typeMap[type] || type
+}
+
+export function getReminderTypeIcon(type: string): string {
+  const iconMap: Record<string, string> = {
+    MEDICATION: '💊',
+    FOLLOW_UP: '🏥',
+    WEATHER: '🌤️',
+    SERVICE_RECOMMENDATION: '⭐',
+    GENERAL: '💌'
+  }
+  return iconMap[type] || '🔔'
+}
+
+export function getReminderTypeColor(type: string): string {
+  const colorMap: Record<string, string> = {
+    MEDICATION: 'from-red-400 to-pink-400',
+    FOLLOW_UP: 'from-purple-400 to-indigo-400',
+    WEATHER: 'from-blue-400 to-cyan-400',
+    SERVICE_RECOMMENDATION: 'from-yellow-400 to-orange-400',
+    GENERAL: 'from-green-400 to-emerald-400'
+  }
+  return colorMap[type] || 'from-gray-400 to-gray-500'
+}
+
 export function getRoleText(role: string): string {
   const roleMap: Record<string, string> = {
     ELDERLY: '老人',

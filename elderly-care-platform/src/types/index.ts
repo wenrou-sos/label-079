@@ -50,6 +50,58 @@ export enum CompanionType {
   WALK = 'WALK',
 }
 
+export enum ReminderType {
+  MEDICATION = 'MEDICATION',
+  FOLLOW_UP = 'FOLLOW_UP',
+  WEATHER = 'WEATHER',
+  SERVICE_RECOMMENDATION = 'SERVICE_RECOMMENDATION',
+  GENERAL = 'GENERAL',
+}
+
+export interface HealthProfile {
+  id: number
+  userId: number
+  chronicDiseases?: string | null
+  allergies?: string | null
+  medications?: string | null
+  bloodType?: string | null
+  height?: number | null
+  weight?: number | null
+  lastCheckupDate?: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface Reminder {
+  id: number
+  userId: number
+  ruleId?: number | null
+  type: ReminderType
+  title: string
+  content: string
+  isRead: boolean
+  isActive: boolean
+  triggeredAt: string
+  readAt?: string | null
+  createdAt: string
+  updatedAt: string
+  rule?: { id: number; name: string; type: string } | null
+}
+
+export interface ReminderRule {
+  id: number
+  name: string
+  type: ReminderType
+  description?: string | null
+  condition: string
+  template: string
+  isActive: boolean
+  priority: number
+  createdAt: string
+  updatedAt: string
+  _count?: { reminders: number }
+}
+
 export interface User {
   id: number
   phone: string

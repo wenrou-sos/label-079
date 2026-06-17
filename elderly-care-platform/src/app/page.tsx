@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
-import { serviceApi } from '@/lib/api'
-import { ServiceCategory } from '@/types'
-import { getServiceCategoryText } from '@/lib/utils'
+import { serviceApi, reminderApi, orderApi } from '@/lib/api'
+import { ServiceCategory, ReminderType, type Reminder } from '@/types'
+import { getServiceCategoryText, getReminderTypeIcon, getReminderTypeColor, getReminderTypeText } from '@/lib/utils'
 import Link from 'next/link'
 
 interface Service {
@@ -45,6 +45,12 @@ export default function HomePage() {
   const [services, setServices] = useState<Service[]>([])
   const [selectedCategory, setSelectedCategory] = useState<ServiceCategory | null>(null)
   const [servicesLoading, setServicesLoading] = useState(true)
+  const [reminders, setReminders] = useState<Reminder[]>([])
+  const [unreadCount, setUnreadCount] = useState(0)
+  const [remindersLoading, setRemindersLoading] = useState(true)
+  const [expandedReminder, setExpandedReminder] = useState<number | null>(null)
+  const [recommendedPackages, setRecommendedPackages] = useState<any[]>([])
+  const [packagesLoading, setPackagesLoading] = useState(true)
 
   useEffect(() => {
     if (!loading && !user) {
@@ -66,6 +72,177 @@ export default function HomePage() {
 
     loadServices()
   }, [selectedCategory])
+
+  useEffect(() => {
+    if (!user || user.role !== 'ELDERLY') {
+      setRemindersLoading(false)
+      return
+    }
+
+    const loadReminders = async () => {
+      try {
+        await reminderApi.generate()
+        const data: any = await reminderApi.getList()
+        setReminders(data.reminders || [])
+        setUnreadCount(data.unreadCount || 0)
+      } catch (error) {
+        console.error('加载提醒失败:', error)
+      } finally {
+        setRemindersLoading(false)
+      }
+    }
+
+    loadReminders()
+  }, [user])
+
+  useEffect(() => {
+    if (!user || user.role !== 'ELDERLY' || services.length === 0) {
+      setPackagesLoading(false)
+      return
+    }
+
+    const loadRecommendations = async () => {
+      try {
+        setPackagesLoading(true)
+
+        const threeMonthsAgo = new Date()
+        threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3)
+
+        const ordersData: any = await orderApi.getList({
+          startDate: threeMonthsAgo.toISOString().split('T')[0]
+        })
+        const recentOrders = ordersData.data || []
+
+        const categoryCount: Record<string, number> = {}
+        recentOrders.forEach((order: any) => {
+          if (order.service?.category) {
+            const cat = order.service.category
+            categoryCount[cat] = (categoryCount[cat] || 0) + 1
+          }
+        })
+
+        const sortedCategories = Object.entries(categoryCount)
+          .sort(([, a], [, b]) => b - a)
+          .map(([cat]) => cat)
+
+        const packages: any[] = []
+
+        if (sortedCategories.includes(ServiceCategory.MEAL) || services.some(s => s.category === ServiceCategory.MEAL)) {
+          const mealServices = services.filter(s => s.category === ServiceCategory.MEAL)
+          if (mealServices.length > 0) {
+            packages.push({
+              id: 'meal-weekly',
+              name: '营养助餐周套餐',
+              icon: '🍱',
+              color: 'from-orange-400 to-red-400',
+              description: '一周营养配餐，每日送餐上门',
+              originalPrice: mealServices.reduce((sum, s) => sum + Number(s.basePrice), 0) * 7,
+              discountPrice: Math.round(mealServices.reduce((sum, s) => sum + Number(s.basePrice), 0) * 7 * 0.85),
+              services: mealServices.slice(0, 2),
+              tag: '热销',
+              reason: '根据您的助餐偏好推荐'
+            })
+          }
+        }
+
+        if (sortedCategories.includes(ServiceCategory.CLEANING) || services.some(s => s.category === ServiceCategory.CLEANING)) {
+          const cleaningServices = services.filter(s => s.category === ServiceCategory.CLEANING)
+          if (cleaningServices.length > 0) {
+            packages.push({
+              id: 'cleaning-monthly',
+              name: '居家保洁月套餐',
+              icon: '🧹',
+              color: 'from-green-400 to-emerald-400',
+              description: '每月4次居家保洁 + 2次洗衣服务',
+              originalPrice: 4 * 30 + 2 * 25,
+              discountPrice: Math.round((4 * 30 + 2 * 25) * 0.8),
+              services: cleaningServices,
+              tag: '超值',
+              reason: '定期保洁，保持家居整洁'
+            })
+          }
+        }
+
+        if (sortedCategories.includes(ServiceCategory.COMPANION) || services.some(s => s.category === ServiceCategory.COMPANION)) {
+          const companionServices = services.filter(s => s.category === ServiceCategory.COMPANION)
+          const medicalServices = services.filter(s => s.category === ServiceCategory.MEDICAL)
+          if (companionServices.length > 0) {
+            packages.push({
+              id: 'companion-health',
+              name: '健康关怀套餐',
+              icon: '👨‍👩‍👧',
+              color: 'from-yellow-400 to-orange-400',
+              description: '4次陪同散步 + 1次陪诊服务',
+              originalPrice: 4 * 25 + 1 * 50,
+              discountPrice: Math.round((4 * 25 + 1 * 50) * 0.85),
+              services: [...companionServices, ...medicalServices.slice(0, 1)],
+              tag: '推荐',
+              reason: '结合陪护和助医，关爱身心健康'
+            })
+          }
+        }
+
+        if (services.some(s => s.category === ServiceCategory.BATH)) {
+          const bathServices = services.filter(s => s.category === ServiceCategory.BATH)
+          if (bathServices.length > 0) {
+            packages.push({
+              id: 'bath-care',
+              name: '助浴护理套餐',
+              icon: '🛁',
+              color: 'from-blue-400 to-cyan-400',
+              description: '每月2次上门助浴，专业护理安全保障',
+              originalPrice: 2 * 80,
+              discountPrice: Math.round(2 * 80 * 0.9),
+              services: bathServices,
+              tag: '关爱',
+              reason: '定期助浴，提升生活品质'
+            })
+          }
+        }
+
+        setRecommendedPackages(packages.slice(0, 3))
+      } catch (error) {
+        console.error('加载推荐套餐失败:', error)
+      } finally {
+        setPackagesLoading(false)
+      }
+    }
+
+    loadRecommendations()
+  }, [user, services])
+
+  const handleMarkRead = async (id: number) => {
+    try {
+      await reminderApi.markRead(id)
+      setReminders(prev => prev.map(r => r.id === id ? { ...r, isRead: true, readAt: new Date().toISOString() } : r))
+      setUnreadCount(prev => Math.max(0, prev - 1))
+    } catch (error) {
+      console.error('标记已读失败:', error)
+    }
+  }
+
+  const handleMarkAllRead = async () => {
+    try {
+      await reminderApi.markAllRead()
+      setReminders(prev => prev.map(r => ({ ...r, isRead: true, readAt: new Date().toISOString() })))
+      setUnreadCount(0)
+    } catch (error) {
+      console.error('标记全部已读失败:', error)
+    }
+  }
+
+  const handleDismiss = async (id: number) => {
+    try {
+      await reminderApi.dismiss(id)
+      setReminders(prev => prev.filter(r => r.id !== id))
+      setUnreadCount(prev => {
+        const dismissed = reminders.find(r => r.id === id)
+        return dismissed && !dismissed.isRead ? prev - 1 : prev
+      })
+    } catch (error) {
+      console.error('关闭提醒失败:', error)
+    }
+  }
 
   if (loading || !user) {
     return (
@@ -149,6 +326,218 @@ export default function HomePage() {
           </div>
         </div>
       </div>
+
+      {user.role === 'ELDERLY' && (
+        <div className="px-4 mt-4">
+          <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+            <div className="p-4 pb-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">💝</span>
+                  <h2 className="text-lg font-bold text-gray-800">关怀提醒</h2>
+                  {unreadCount > 0 && (
+                    <span className="px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full">
+                      {unreadCount}
+                    </span>
+                  )}
+                </div>
+                {unreadCount > 0 && (
+                  <button
+                    onClick={handleMarkAllRead}
+                    className="text-xs text-orange-500 hover:text-orange-600 font-medium"
+                  >
+                    全部已读
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {remindersLoading ? (
+              <div className="flex justify-center py-6">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-500"></div>
+              </div>
+            ) : reminders.length > 0 ? (
+              <div className="px-4 pb-4 space-y-3">
+                {reminders.slice(0, 5).map((reminder) => (
+                  <div
+                    key={reminder.id}
+                    className={`rounded-xl border transition-all ${
+                      reminder.isRead
+                        ? 'bg-gray-50 border-gray-100'
+                        : 'bg-white border-orange-200 shadow-sm'
+                    }`}
+                  >
+                    <div
+                      className="p-3 cursor-pointer"
+                      onClick={() => {
+                        if (!reminder.isRead) handleMarkRead(reminder.id)
+                        setExpandedReminder(expandedReminder === reminder.id ? null : reminder.id)
+                      }}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${getReminderTypeColor(reminder.type)} flex items-center justify-center flex-shrink-0`}>
+                          <span className="text-lg">{getReminderTypeIcon(reminder.type)}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h3 className={`text-sm font-bold ${reminder.isRead ? 'text-gray-500' : 'text-gray-800'}`}>
+                              {reminder.title}
+                            </h3>
+                            {!reminder.isRead && (
+                              <span className="w-2 h-2 bg-red-500 rounded-full flex-shrink-0"></span>
+                            )}
+                          </div>
+                          <p className={`text-xs mt-0.5 ${reminder.isRead ? 'text-gray-400' : 'text-gray-600'} line-clamp-2`}>
+                            {reminder.content}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-xs text-gray-400">
+                              {getReminderTypeText(reminder.type)}
+                            </span>
+                            <span className="text-xs text-gray-300">·</span>
+                            <span className="text-xs text-gray-400">
+                              {new Date(reminder.triggeredAt).toLocaleDateString('zh-CN')}
+                            </span>
+                          </div>
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleDismiss(reminder.id)
+                          }}
+                          className="text-gray-300 hover:text-gray-500 flex-shrink-0 mt-1"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                    {expandedReminder === reminder.id && (
+                      <div className="px-3 pb-3 border-t border-gray-100 pt-3">
+                        <p className="text-sm text-gray-600 leading-relaxed">
+                          {reminder.content}
+                        </p>
+                        {(reminder.type === ReminderType.MEDICATION || reminder.type === ReminderType.FOLLOW_UP) && (
+                          <Link
+                            href="/orders/create?serviceId=6"
+                            className="inline-block mt-3 px-4 py-2 bg-orange-500 text-white text-sm font-medium rounded-lg hover:bg-orange-600 transition-colors"
+                          >
+                            预约陪诊服务
+                          </Link>
+                        )}
+                        {reminder.type === ReminderType.SERVICE_RECOMMENDATION && (
+                          <Link
+                            href="/"
+                            className="inline-block mt-3 px-4 py-2 bg-orange-500 text-white text-sm font-medium rounded-lg hover:bg-orange-600 transition-colors"
+                          >
+                            查看服务
+                          </Link>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {reminders.length > 5 && (
+                  <div className="text-center">
+                    <button className="text-sm text-orange-500 hover:text-orange-600 font-medium">
+                      查看更多提醒
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="px-4 pb-4">
+                <div className="text-center py-6">
+                  <span className="text-4xl">🌤️</span>
+                  <p className="text-gray-400 text-sm mt-2">今天没有新提醒</p>
+                  <p className="text-gray-300 text-xs mt-1">祝您一天愉快！</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {user.role === 'ELDERLY' && recommendedPackages.length > 0 && (
+        <div className="px-4 mt-4">
+          <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+            <div className="p-4 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">🎁</span>
+                <h2 className="text-lg font-bold text-gray-800">为您推荐套餐</h2>
+              </div>
+              <p className="text-xs text-gray-400 mt-1">根据您的服务偏好和健康档案智能推荐</p>
+            </div>
+
+            {packagesLoading ? (
+              <div className="flex justify-center py-6">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-500"></div>
+              </div>
+            ) : (
+              <div className="px-4 pb-4 space-y-3">
+                {recommendedPackages.map((pkg) => (
+                  <div
+                    key={pkg.id}
+                    className="relative rounded-xl border-2 border-orange-100 overflow-hidden hover:border-orange-300 transition-colors"
+                  >
+                    <div className={`h-1.5 bg-gradient-to-r ${pkg.color}`}></div>
+                    <div className="p-4">
+                      <div className="flex items-start gap-3">
+                        <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${pkg.color} flex items-center justify-center flex-shrink-0`}>
+                          <span className="text-2xl">{pkg.icon}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-bold text-gray-800">{pkg.name}</h3>
+                            <span className="px-2 py-0.5 bg-orange-100 text-orange-600 text-xs font-medium rounded-full">
+                              {pkg.tag}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-500 mt-1">{pkg.description}</p>
+                          <p className="text-xs text-gray-400 mt-1">💡 {pkg.reason}</p>
+                          <div className="flex items-end gap-2 mt-3">
+                            <span className="text-xl font-bold text-orange-500">
+                              ¥{pkg.discountPrice}
+                            </span>
+                            <span className="text-sm text-gray-400 line-through mb-0.5">
+                              ¥{pkg.originalPrice}
+                            </span>
+                            <span className="px-1.5 py-0.5 bg-red-50 text-red-500 text-xs font-medium rounded">
+                              省¥{pkg.originalPrice - pkg.discountPrice}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-3 pt-3 border-t border-gray-100">
+                        <div className="flex items-center gap-2 mb-3">
+                          <span className="text-xs text-gray-400">包含服务：</span>
+                          <div className="flex flex-wrap gap-1">
+                            {pkg.services?.map((s: Service) => (
+                              <span key={s.id} className="px-2 py-0.5 bg-gray-50 text-gray-600 text-xs rounded">
+                                {s.name}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Link
+                            href={`/orders/create?serviceId=${pkg.services?.[0]?.id || 1}&packageId=${pkg.id}`}
+                            className="flex-1 py-2.5 bg-orange-500 text-white font-medium rounded-lg text-center text-sm hover:bg-orange-600 transition-colors"
+                          >
+                            立即预约套餐
+                          </Link>
+                          <button className="px-4 py-2.5 bg-orange-50 text-orange-500 font-medium rounded-lg text-sm hover:bg-orange-100 transition-colors">
+                            详情
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="px-4 mt-6">
         <div className="flex items-center justify-between mb-4">

@@ -53,6 +53,7 @@ const menuItems = [
   { key: 'orders', label: '工单管理', href: '/admin/orders', icon: '📋' },
   { key: 'schedules', label: '排班管理', href: '/admin/schedules', icon: '📅' },
   { key: 'quality-checks', label: '质量抽查', href: '/admin/quality-checks', icon: '🔍' },
+  { key: 'reminder-rules', label: '提醒规则', href: '/admin/reminder-rules', icon: '🔔' },
 ]
 
 const quickActions = [
@@ -60,6 +61,7 @@ const quickActions = [
   { key: 'orders', label: '订单管理', href: '/admin/orders', icon: '📋', color: 'bg-green-500' },
   { key: 'schedules', label: '排班管理', href: '/admin/schedules', icon: '📅', color: 'bg-purple-500' },
   { key: 'quality-checks', label: '质量抽查', href: '/admin/quality-checks', icon: '🔍', color: 'bg-orange-500' },
+  { key: 'reminder-rules', label: '提醒规则', href: '/admin/reminder-rules', icon: '🔔', color: 'bg-pink-500' },
 ]
 
 export default function AdminDashboardPage() {
@@ -431,7 +433,7 @@ export default function AdminDashboardPage() {
 
               <section>
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">快捷操作</h3>
-                <div className="grid grid-cols-4 gap-6">
+                <div className="grid grid-cols-5 gap-6">
                   {quickActions.map((action) => (
                     <button
                       key={action.key}

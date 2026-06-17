@@ -64,6 +64,14 @@ enum CompanionType {
   WALK
 }
 
+enum ReminderType {
+  MEDICATION
+  FOLLOW_UP
+  WEATHER
+  SERVICE_RECOMMENDATION
+  GENERAL
+}
+
 model User {
   id              Int           @id @default(autoincrement())
   phone           String        @unique
@@ -93,6 +101,8 @@ model User {
   reviewsReceived Review[]      @relation("Reviewee")
   qualityChecksAsStaff QualityCheck[] @relation("QualityCheckStaff")
   qualityChecksAsAdmin QualityCheck[] @relation("QualityCheckAdmin")
+  healthProfile   HealthProfile?
+  reminders       Reminder[]
 }
 
 model FamilyMember {
@@ -303,4 +313,53 @@ model QualityCheck {
   order         Order     @relation(fields: [orderId], references: [id])
   admin         User      @relation("QualityCheckAdmin", fields: [adminId], references: [id])
   staff         User      @relation("QualityCheckStaff", fields: [staffId], references: [id])
+}
+
+model HealthProfile {
+  id              Int      @id @default(autoincrement())
+  userId          Int      @unique
+  chronicDiseases String?
+  allergies       String?
+  medications     String?
+  bloodType       String?
+  height          Decimal?
+  weight          Decimal?
+  lastCheckupDate DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User     @relation(fields: [userId], references: [id])
+}
+
+model ReminderRule {
+  id          Int      @id @default(autoincrement())
+  name        String
+  type        ReminderType
+  description String?
+  condition   String
+  template    String
+  isActive    Boolean  @default(true)
+  priority    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  reminders   Reminder[]
+}
+
+model Reminder {
+  id          Int          @id @default(autoincrement())
+  userId      Int
+  ruleId      Int?
+  type        ReminderType
+  title       String
+  content     String
+  isRead      Boolean      @default(false)
+  isActive    Boolean      @default(true)
+  triggeredAt DateTime     @default(now())
+  readAt      DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  user        User         @relation(fields: [userId], references: [id])
+  rule        ReminderRule? @relation(fields: [ruleId], references: [id])
 }

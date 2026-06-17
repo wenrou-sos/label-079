@@ -3,8 +3,9 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
-import { serviceApi, reminderApi, orderApi } from '@/lib/api'
+import { serviceApi, reminderApi, orderApi, healthProfileApi } from '@/lib/api'
 import { ServiceCategory, ReminderType, type Reminder } from '@/types'
+import type { HealthProfile } from '@/types'
 import { getServiceCategoryText, getReminderTypeIcon, getReminderTypeColor, getReminderTypeText } from '@/lib/utils'
 import Link from 'next/link'
 
@@ -108,10 +109,14 @@ export default function HomePage() {
         const threeMonthsAgo = new Date()
         threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3)
 
-        const ordersData: any = await orderApi.getList({
+        const ordersPromise = orderApi.getList({
           startDate: threeMonthsAgo.toISOString().split('T')[0]
-        })
-        const recentOrders = ordersData.data || []
+        }).catch(() => ({ data: [] }))
+        const healthPromise = healthProfileApi.get().catch(() => null) as Promise<HealthProfile | null>
+        const [ordersData, healthProfile] = await Promise.all([ordersPromise, healthPromise])
+
+        const recentOrders = (ordersData as any).data || []
+        const orderCount = recentOrders.length
 
         const categoryCount: Record<string, number> = {}
         recentOrders.forEach((order: any) => {
@@ -125,12 +130,37 @@ export default function HomePage() {
           .sort(([, a], [, b]) => b - a)
           .map(([cat]) => cat)
 
-        const packages: any[] = []
+        let age: number | null = null
+        if (user.birthday) {
+          const birth = new Date(user.birthday)
+          const now = new Date()
+          age = now.getFullYear() - birth.getFullYear()
+          if (now < new Date(now.getFullYear(), birth.getMonth(), birth.getDate())) {
+            age--
+          }
+        }
 
-        if (sortedCategories.includes(ServiceCategory.MEAL) || services.some(s => s.category === ServiceCategory.MEAL)) {
+        const hasChronicDisease = healthProfile?.chronicDiseases && 
+          healthProfile.chronicDiseases.trim().length > 0
+        const needsFollowUp = healthProfile?.lastCheckupDate && 
+          (new Date().getTime() - new Date(healthProfile.lastCheckupDate).getTime()) > 90 * 24 * 60 * 60 * 1000
+        const isElderly = age !== null && age >= 75
+
+        const packages: any[] = []
+        const addedPackageIds = new Set<string>()
+
+        const addPackage = (pkg: any) => {
+          if (!addedPackageIds.has(pkg.id)) {
+            addedPackageIds.add(pkg.id)
+            packages.push(pkg)
+          }
+        }
+
+        if (sortedCategories.includes(ServiceCategory.MEAL)) {
           const mealServices = services.filter(s => s.category === ServiceCategory.MEAL)
           if (mealServices.length > 0) {
-            packages.push({
+            const mealCount = categoryCount[ServiceCategory.MEAL] || 0
+            addPackage({
               id: 'meal-weekly',
               name: '营养助餐周套餐',
               icon: '🍱',
@@ -140,15 +170,18 @@ export default function HomePage() {
               discountPrice: Math.round(mealServices.reduce((sum, s) => sum + Number(s.basePrice), 0) * 7 * 0.85),
               services: mealServices.slice(0, 2),
               tag: '热销',
-              reason: '根据您的助餐偏好推荐'
+              reason: orderCount > 0 
+                ? `根据您近3个月${mealCount}次助餐服务偏好推荐`
+                : '营养助餐，每日配送'
             })
           }
         }
 
-        if (sortedCategories.includes(ServiceCategory.CLEANING) || services.some(s => s.category === ServiceCategory.CLEANING)) {
+        if (sortedCategories.includes(ServiceCategory.CLEANING)) {
           const cleaningServices = services.filter(s => s.category === ServiceCategory.CLEANING)
           if (cleaningServices.length > 0) {
-            packages.push({
+            const cleaningCount = categoryCount[ServiceCategory.CLEANING] || 0
+            addPackage({
               id: 'cleaning-monthly',
               name: '居家保洁月套餐',
               icon: '🧹',
@@ -158,34 +191,54 @@ export default function HomePage() {
               discountPrice: Math.round((4 * 30 + 2 * 25) * 0.8),
               services: cleaningServices,
               tag: '超值',
-              reason: '定期保洁，保持家居整洁'
+              reason: `根据您近3个月${cleaningCount}次保洁服务偏好推荐`
             })
           }
         }
 
-        if (sortedCategories.includes(ServiceCategory.COMPANION) || services.some(s => s.category === ServiceCategory.COMPANION)) {
+        if (sortedCategories.includes(ServiceCategory.COMPANION)) {
           const companionServices = services.filter(s => s.category === ServiceCategory.COMPANION)
-          const medicalServices = services.filter(s => s.category === ServiceCategory.MEDICAL)
           if (companionServices.length > 0) {
-            packages.push({
-              id: 'companion-health',
-              name: '健康关怀套餐',
+            const companionCount = categoryCount[ServiceCategory.COMPANION] || 0
+            addPackage({
+              id: 'companion-care',
+              name: '陪伴关怀套餐',
               icon: '👨‍👩‍👧',
               color: 'from-yellow-400 to-orange-400',
-              description: '4次陪同散步 + 1次陪诊服务',
-              originalPrice: 4 * 25 + 1 * 50,
-              discountPrice: Math.round((4 * 25 + 1 * 50) * 0.85),
-              services: [...companionServices, ...medicalServices.slice(0, 1)],
-              tag: '推荐',
-              reason: '结合陪护和助医，关爱身心健康'
+              description: '每周2次陪伴聊天 + 1次陪同散步',
+              originalPrice: 8 * 25 + 4 * 25,
+              discountPrice: Math.round((8 * 25 + 4 * 25) * 0.85),
+              services: companionServices,
+              tag: '关怀',
+              reason: `根据您近3个月${companionCount}次陪护服务偏好推荐`
             })
           }
         }
 
-        if (services.some(s => s.category === ServiceCategory.BATH)) {
+        if (sortedCategories.includes(ServiceCategory.MEDICAL)) {
+          const medicalServices = services.filter(s => s.category === ServiceCategory.MEDICAL)
+          if (medicalServices.length > 0) {
+            const medicalCount = categoryCount[ServiceCategory.MEDICAL] || 0
+            addPackage({
+              id: 'medical-care',
+              name: '助医护理套餐',
+              icon: '�',
+              color: 'from-purple-400 to-pink-400',
+              description: '每月2次陪诊 + 2次代取药服务',
+              originalPrice: 2 * 50 + 2 * 30,
+              discountPrice: Math.round((2 * 50 + 2 * 30) * 0.85),
+              services: medicalServices,
+              tag: '健康',
+              reason: `根据您近3个月${medicalCount}次助医服务偏好推荐`
+            })
+          }
+        }
+
+        if (sortedCategories.includes(ServiceCategory.BATH)) {
           const bathServices = services.filter(s => s.category === ServiceCategory.BATH)
           if (bathServices.length > 0) {
-            packages.push({
+            const bathCount = categoryCount[ServiceCategory.BATH] || 0
+            addPackage({
               id: 'bath-care',
               name: '助浴护理套餐',
               icon: '🛁',
@@ -195,7 +248,83 @@ export default function HomePage() {
               discountPrice: Math.round(2 * 80 * 0.9),
               services: bathServices,
               tag: '关爱',
-              reason: '定期助浴，提升生活品质'
+              reason: `根据您近3个月${bathCount}次助浴服务偏好推荐`
+            })
+          }
+        }
+
+        if (packages.length < 3 && (hasChronicDisease || needsFollowUp)) {
+          const medicalServices = services.filter(s => s.category === ServiceCategory.MEDICAL)
+          if (medicalServices.length > 0 && !addedPackageIds.has('medical-health')) {
+            const reasons: string[] = []
+            if (hasChronicDisease) reasons.push('慢性病管理')
+            if (needsFollowUp) reasons.push('复诊提醒')
+            addPackage({
+              id: 'medical-health',
+              name: '健康管理套餐',
+              icon: '🏥',
+              color: 'from-purple-400 to-pink-400',
+              description: '每月2次陪诊服务 + 2次代取药，专人陪同就医',
+              originalPrice: 2 * 50 + 2 * 30,
+              discountPrice: Math.round((2 * 50 + 2 * 30) * 0.8),
+              services: medicalServices,
+              tag: '专属',
+              reason: `为您的健康定制：${reasons.join('、')}`
+            })
+          }
+        }
+
+        if (packages.length < 3 && isElderly) {
+          const bathServices = services.filter(s => s.category === ServiceCategory.BATH)
+          const companionServices = services.filter(s => s.category === ServiceCategory.COMPANION)
+          if (bathServices.length > 0 && !addedPackageIds.has('elderly-care')) {
+            addPackage({
+              id: 'elderly-care',
+              name: '高龄关爱套餐',
+              icon: '🛁',
+              color: 'from-blue-400 to-cyan-400',
+              description: '每月2次上门助浴 + 4次陪同散步',
+              originalPrice: 2 * 80 + 4 * 25,
+              discountPrice: Math.round((2 * 80 + 4 * 25) * 0.85),
+              services: [...bathServices, ...companionServices.slice(0, 1)],
+              tag: '关爱',
+              reason: `为${age}岁高龄长辈定制，助浴陪护更安心`
+            })
+          }
+        }
+
+        if (packages.length < 3 && hasChronicDisease) {
+          const companionServices = services.filter(s => s.category === ServiceCategory.COMPANION)
+          if (companionServices.length > 0 && !addedPackageIds.has('companion-health')) {
+            addPackage({
+              id: 'companion-health',
+              name: '健康关怀套餐',
+              icon: '👨‍👩‍👧',
+              color: 'from-yellow-400 to-orange-400',
+              description: '每周2次陪同散步，促进身心健康',
+              originalPrice: 8 * 25,
+              discountPrice: Math.round(8 * 25 * 0.85),
+              services: companionServices,
+              tag: '推荐',
+              reason: '适度运动有益健康，陪您一起散步'
+            })
+          }
+        }
+
+        if (packages.length < 3) {
+          const mealServices = services.filter(s => s.category === ServiceCategory.MEAL)
+          if (mealServices.length > 0 && !addedPackageIds.has('meal-weekly')) {
+            addPackage({
+              id: 'meal-weekly',
+              name: '营养助餐周套餐',
+              icon: '🍱',
+              color: 'from-orange-400 to-red-400',
+              description: '一周营养配餐，每日送餐上门',
+              originalPrice: mealServices.reduce((sum, s) => sum + Number(s.basePrice), 0) * 7,
+              discountPrice: Math.round(mealServices.reduce((sum, s) => sum + Number(s.basePrice), 0) * 7 * 0.85),
+              services: mealServices.slice(0, 2),
+              tag: '热销',
+              reason: '营养均衡，送货上门，省心省力'
             })
           }
         }

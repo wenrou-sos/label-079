@@ -44,10 +44,10 @@ export async function GET(request: NextRequest) {
         medicalConfig: true,
         companionConfig: true
       },
-      orderBy: {
-        category: 'asc',
-        id: 'asc'
-      }
+      orderBy: [
+        { category: 'asc' },
+        { id: 'asc' }
+      ]
     })
 
     return NextResponse.json(services)

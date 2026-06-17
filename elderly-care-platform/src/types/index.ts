@@ -32,7 +32,7 @@ export enum MealType {
 }
 
 export enum BathType {
-  HOME = 'HOME',
+  HOME_BATH = 'HOME_BATH',
 }
 
 export enum CleaningType {
@@ -42,7 +42,7 @@ export enum CleaningType {
 
 export enum MedicalType {
   ACCOMPANY = 'ACCOMPANY',
-  MEDICINE = 'MEDICINE',
+  PICKUP_MEDICINE = 'PICKUP_MEDICINE',
 }
 
 export enum CompanionType {

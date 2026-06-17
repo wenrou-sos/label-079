@@ -135,9 +135,9 @@ export async function GET(request: NextRequest) {
         },
         review: true
       },
-      orderBy: {
-        createdAt: 'desc'
-      },
+      orderBy: [
+        { createdAt: 'desc' }
+      ],
       skip: (page - 1) * pageSize,
       take: pageSize
     })

@@ -71,9 +71,9 @@ export async function GET(
           }
         },
         statusLogs: {
-          orderBy: {
-            createdAt: 'asc'
-          },
+          orderBy: [
+            { createdAt: 'asc' }
+          ],
           include: {
             operator: {
               select: {

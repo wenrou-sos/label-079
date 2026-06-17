@@ -71,11 +71,9 @@ export async function GET(request: NextRequest) {
       by: ['serviceId'],
       where: orderDateFilter as any,
       _count: true,
-      orderBy: {
-        _count: {
-          serviceId: 'desc'
-        }
-      },
+      orderBy: [
+        { _count: { serviceId: 'desc' } }
+      ],
       take: 5
     })
 
@@ -100,11 +98,9 @@ export async function GET(request: NextRequest) {
         staffId: { not: null }
       } as any,
       _count: true,
-      orderBy: {
-        _count: {
-          staffId: 'desc'
-        }
-      },
+      orderBy: [
+        { _count: { staffId: 'desc' } }
+      ],
       take: 5
     })
 

@@ -1,0 +1,306 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  ELDERLY
+  STAFF
+  ADMIN
+}
+
+enum ServiceCategory {
+  MEAL
+  BATH
+  CLEANING
+  MEDICAL
+  COMPANION
+}
+
+enum OrderStatus {
+  PENDING
+  ACCEPTED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  REFUNDED
+}
+
+enum MealType {
+  DELIVERY
+  CANTEEN
+}
+
+enum BathType {
+  HOME_BATH
+}
+
+enum CleaningType {
+  HOUSEKEEPING
+  LAUNDRY
+}
+
+enum MedicalType {
+  ACCOMPANY
+  PICKUP_MEDICINE
+}
+
+enum CompanionType {
+  CHAT
+  WALK
+}
+
+model User {
+  id              Int           @id @default(autoincrement())
+  phone           String        @unique
+  name            String
+  password        String
+  role            UserRole
+  avatar          String?
+  idCard          String?
+  birthday        DateTime?
+  address         String?
+  latitude        Decimal?
+  longitude       Decimal?
+  healthInfo      String?
+  emergencyContact String?
+  emergencyPhone  String?
+  subsidyLevel    Int           @default(0)
+  isActive        Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  familyMembers   FamilyMember[]
+  ordersAsElderly Order[]       @relation("ElderlyOrders")
+  ordersAsStaff   Order[]       @relation("StaffOrders")
+  schedules       Schedule[]
+  orderStatusLogs OrderStatusLog[]
+  reviews         Review[]      @relation("Reviewer")
+  reviewsReceived Review[]      @relation("Reviewee")
+  qualityChecksAsStaff QualityCheck[] @relation("QualityCheckStaff")
+  qualityChecksAsAdmin QualityCheck[] @relation("QualityCheckAdmin")
+}
+
+model FamilyMember {
+  id          Int      @id @default(autoincrement())
+  elderlyId   Int
+  name        String
+  phone       String
+  relation    String
+  isPrimary   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  elderly     User     @relation(fields: [elderlyId], references: [id])
+}
+
+model Service {
+  id          Int             @id @default(autoincrement())
+  category    ServiceCategory
+  name        String
+  description String
+  basePrice   Decimal
+  duration    Int
+  unit        String
+  isActive    Boolean         @default(true)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  mealConfig  MealServiceConfig?
+  bathConfig  BathServiceConfig?
+  cleaningConfig CleaningServiceConfig?
+  medicalConfig MedicalServiceConfig?
+  companionConfig CompanionServiceConfig?
+  orders      Order[]
+}
+
+model MealServiceConfig {
+  id          Int      @id @default(autoincrement())
+  serviceId   Int      @unique
+  mealType    MealType
+  menu        String?
+  deliveryFee Decimal  @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  service     Service  @relation(fields: [serviceId], references: [id])
+}
+
+model BathServiceConfig {
+  id          Int      @id @default(autoincrement())
+  serviceId   Int      @unique
+  bathType    BathType
+  equipment   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  service     Service  @relation(fields: [serviceId], references: [id])
+}
+
+model CleaningServiceConfig {
+  id             Int          @id @default(autoincrement())
+  serviceId      Int          @unique
+  cleaningType   CleaningType
+  scope          String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  service        Service      @relation(fields: [serviceId], references: [id])
+}
+
+model MedicalServiceConfig {
+  id          Int         @id @default(autoincrement())
+  serviceId   Int         @unique
+  medicalType MedicalType
+  hospital    String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  service     Service     @relation(fields: [serviceId], references: [id])
+}
+
+model CompanionServiceConfig {
+  id              Int             @id @default(autoincrement())
+  serviceId       Int             @unique
+  companionType   CompanionType
+  location        String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  service         Service         @relation(fields: [serviceId], references: [id])
+}
+
+model SubsidyConfig {
+  id          Int      @id @default(autoincrement())
+  level       Int      @unique
+  name        String
+  percentage  Decimal
+  maxAmount   Decimal
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Order {
+  id              Int             @id @default(autoincrement())
+  orderNo         String          @unique
+  elderlyId       Int
+  staffId         Int?
+  serviceId       Int
+  status          OrderStatus     @default(PENDING)
+  scheduledTime   DateTime
+  actualStartTime DateTime?
+  actualEndTime   DateTime?
+  checkInLatitude Decimal?
+  checkInLongitude Decimal?
+  checkOutLatitude Decimal?
+  checkOutLongitude Decimal?
+  totalAmount     Decimal
+  subsidyAmount   Decimal
+  personalAmount  Decimal
+  address         String
+  latitude        Decimal?
+  longitude       Decimal?
+  remark          String?
+  cancelReason    String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  elderly         User            @relation("ElderlyOrders", fields: [elderlyId], references: [id])
+  staff           User?           @relation("StaffOrders", fields: [staffId], references: [id])
+  service         Service         @relation(fields: [serviceId], references: [id])
+  statusLogs      OrderStatusLog[]
+  payments        Payment[]
+  review          Review?
+  schedules       Schedule[]
+  qualityCheck    QualityCheck?
+}
+
+model OrderStatusLog {
+  id          Int         @id @default(autoincrement())
+  orderId     Int
+  status      OrderStatus
+  operatorId  Int
+  remark      String?
+  createdAt   DateTime    @default(now())
+
+  order       Order       @relation(fields: [orderId], references: [id])
+  operator    User        @relation(fields: [operatorId], references: [id])
+}
+
+model Payment {
+  id             Int           @id @default(autoincrement())
+  orderId        Int
+  amount         Decimal
+  subsidyAmount  Decimal
+  personalAmount Decimal
+  status         PaymentStatus @default(PENDING)
+  paymentMethod  String?
+  transactionId  String?
+  paidAt         DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  order          Order         @relation(fields: [orderId], references: [id])
+}
+
+model Review {
+  id          Int      @id @default(autoincrement())
+  orderId     Int      @unique
+  reviewerId  Int
+  revieweeId  Int
+  rating      Int
+  comment     String?
+  images      String?
+  createdAt   DateTime @default(now())
+
+  order       Order    @relation(fields: [orderId], references: [id])
+  reviewer    User     @relation("Reviewer", fields: [reviewerId], references: [id])
+  reviewee    User     @relation("Reviewee", fields: [revieweeId], references: [id])
+}
+
+model Schedule {
+  id        Int      @id @default(autoincrement())
+  staffId   Int
+  date      DateTime
+  startTime DateTime
+  endTime   DateTime
+  isAvailable Boolean @default(true)
+  orderId   Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  staff     User     @relation(fields: [staffId], references: [id])
+  order     Order?   @relation(fields: [orderId], references: [id])
+}
+
+model QualityCheck {
+  id            Int       @id @default(autoincrement())
+  orderId       Int       @unique
+  adminId       Int
+  staffId       Int
+  checkType     String
+  result        String
+  score         Int?
+  remark        String?
+  checkedAt     DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  order         Order     @relation(fields: [orderId], references: [id])
+  admin         User      @relation("QualityCheckAdmin", fields: [adminId], references: [id])
+  staff         User      @relation("QualityCheckStaff", fields: [staffId], references: [id])
+}

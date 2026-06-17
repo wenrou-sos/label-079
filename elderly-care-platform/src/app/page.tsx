@@ -751,6 +751,13 @@ export default function HomePage() {
             <span className="text-xs mt-1 font-medium">首页</span>
           </button>
           <button
+            onClick={() => router.push('/packages')}
+            className="flex flex-col items-center text-gray-400 hover:text-gray-600"
+          >
+            <span className="text-2xl">📦</span>
+            <span className="text-xs mt-1">套餐</span>
+          </button>
+          <button
             onClick={() => router.push('/orders')}
             className="flex flex-col items-center text-gray-400 hover:text-gray-600"
           >

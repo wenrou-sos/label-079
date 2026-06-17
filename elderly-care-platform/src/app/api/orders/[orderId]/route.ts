@@ -306,18 +306,73 @@ async function handleCheckOut(orderId: number, currentUser: any, request: NextRe
 }
 
 async function handleComplete(orderId: number, currentUser: any) {
-  const order = await prisma.order.findUnique({ where: { id: orderId } })
-  
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: {
+      packageService: true
+    }
+  })
+
   if (!order) {
     return NextResponse.json({ error: '订单不存在' }, { status: 404 })
   }
-  
+
   if (order.elderlyId !== currentUser.userId) {
     return NextResponse.json({ error: '无权操作此订单' }, { status: 403 })
   }
-  
+
   if (order.status !== OrderStatus.COMPLETED) {
     return NextResponse.json({ error: '订单状态不允许确认' }, { status: 400 })
+  }
+
+  if (order.packageService) {
+    const packageServiceId = order.packageService.id
+
+    await prisma.packageService.update({
+      where: { id: packageServiceId },
+      data: {
+        status: 'COMPLETED' as any,
+        completedAt: new Date()
+      }
+    })
+
+    const pkgService = order.packageService
+    const pkg = await prisma.packageOrder.findUnique({
+      where: { id: pkgService.packageOrderId }
+    })
+
+    if (pkg && pkg.status !== 'COMPLETED') {
+      const updatedUsed = pkg.usedServices + 1
+      const updatedRemaining = Math.max(0, pkg.remainingServices - 1)
+      const isAllUsed = updatedRemaining === 0
+
+      await prisma.packageOrder.update({
+        where: { id: pkg.id },
+        data: {
+          usedServices: updatedUsed,
+          remainingServices: updatedRemaining,
+          status: isAllUsed ? ('COMPLETED' as any) : pkg.status
+        }
+      })
+
+      if (isAllUsed) {
+        try {
+          await prisma.reminder.create({
+            data: {
+              userId: pkg.elderlyId,
+              type: 'SERVICE_RECOMMENDATION' as any,
+              title: '套餐服务已用完',
+              content: `您的套餐 ${pkg.packageNo} 已全部用完，如需继续使用请续订。`,
+              isRead: false,
+              isActive: true,
+              triggeredAt: new Date()
+            }
+          })
+        } catch (e) {
+          console.error('创建续订提醒失败:', e)
+        }
+      }
+    }
   }
 
   await prisma.payment.create({

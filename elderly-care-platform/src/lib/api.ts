@@ -186,6 +186,71 @@ export const reminderRuleApi = {
     })
 }
 
+export const packageTemplateApi = {
+  getList: (params?: { isActive?: string; category?: string; keyword?: string }) => {
+    const query = new URLSearchParams()
+    if (params?.isActive) query.append('isActive', params.isActive)
+    if (params?.category) query.append('category', params.category)
+    if (params?.keyword) query.append('keyword', params.keyword)
+    return apiRequest(`/admin/package-templates${query.toString() ? `?${query.toString()}` : ''}`)
+  },
+  create: (data: any) =>
+    apiRequest('/admin/package-templates', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    }),
+  update: (id: number, data: any) =>
+    apiRequest(`/admin/package-templates?id=${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    }),
+  delete: (id: number) =>
+    apiRequest(`/admin/package-templates?id=${id}`, {
+      method: 'DELETE'
+    })
+}
+
+export const packageApi = {
+  getList: (params?: { status?: string; elderlyId?: number; withServices?: boolean }) => {
+    const query = new URLSearchParams()
+    if (params?.status) query.append('status', params.status)
+    if (params?.elderlyId) query.append('elderlyId', params.elderlyId.toString())
+    if (params?.withServices) query.append('withServices', 'true')
+    return apiRequest(`/packages${query.toString() ? `?${query.toString()}` : ''}`)
+  },
+  create: (data: any) =>
+    apiRequest('/packages', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    }),
+  pause: (id: number, reason: string) =>
+    apiRequest(`/packages?id=${id}&action=pause`, {
+      method: 'PUT',
+      body: JSON.stringify({ reason })
+    }),
+  resume: (id: number) =>
+    apiRequest(`/packages?id=${id}&action=resume`, {
+      method: 'PUT'
+    }),
+  cancel: (id: number, reason?: string) =>
+    apiRequest(`/packages?id=${id}&action=cancel`, {
+      method: 'PUT',
+      body: JSON.stringify({ reason })
+    }),
+  renew: (id: number, data?: any) =>
+    apiRequest(`/packages?id=${id}&action=renew`, {
+      method: 'PUT',
+      body: JSON.stringify(data || {})
+    }),
+  generateOrders: (packageServiceIds?: number[]) =>
+    apiRequest('/packages/generate-orders', {
+      method: 'POST',
+      body: JSON.stringify(packageServiceIds ? { packageServiceIds } : {})
+    }),
+  getPendingOrders: () =>
+    apiRequest('/packages/generate-orders')
+}
+
 export const adminApi = {
   getUsers: (params?: { role?: string; page?: number; pageSize?: number; keyword?: string }) => {
     const query = new URLSearchParams()

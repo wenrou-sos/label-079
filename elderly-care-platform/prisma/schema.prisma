@@ -72,6 +72,21 @@ enum ReminderType {
   GENERAL
 }
 
+enum PackageCycleType {
+  DAILY
+  WEEKLY
+  MONTHLY
+  CUSTOM
+}
+
+enum PackageStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+  EXPIRED
+  CANCELLED
+}
+
 model User {
   id              Int           @id @default(autoincrement())
   phone           String        @unique
@@ -103,6 +118,7 @@ model User {
   qualityChecksAsAdmin QualityCheck[] @relation("QualityCheckAdmin")
   healthProfile   HealthProfile?
   reminders       Reminder[]
+  packageOrders   PackageOrder[]
 }
 
 model FamilyMember {
@@ -119,23 +135,24 @@ model FamilyMember {
 }
 
 model Service {
-  id          Int             @id @default(autoincrement())
-  category    ServiceCategory
-  name        String
-  description String
-  basePrice   Decimal
-  duration    Int
-  unit        String
-  isActive    Boolean         @default(true)
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  id              Int             @id @default(autoincrement())
+  category        ServiceCategory
+  name            String
+  description     String
+  basePrice       Decimal
+  duration        Int
+  unit            String
+  isActive        Boolean         @default(true)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 
-  mealConfig  MealServiceConfig?
-  bathConfig  BathServiceConfig?
-  cleaningConfig CleaningServiceConfig?
-  medicalConfig MedicalServiceConfig?
+  mealConfig      MealServiceConfig?
+  bathConfig      BathServiceConfig?
+  cleaningConfig  CleaningServiceConfig?
+  medicalConfig   MedicalServiceConfig?
   companionConfig CompanionServiceConfig?
-  orders      Order[]
+  orders          Order[]
+  packageTemplates PackageTemplate[]
 }
 
 model MealServiceConfig {
@@ -210,6 +227,7 @@ model Order {
   elderlyId       Int
   staffId         Int?
   serviceId       Int
+  packageServiceId Int?
   status          OrderStatus     @default(PENDING)
   scheduledTime   DateTime
   actualStartTime DateTime?
@@ -237,6 +255,7 @@ model Order {
   review          Review?
   schedules       Schedule[]
   qualityCheck    QualityCheck?
+  packageService  PackageService?
 }
 
 model OrderStatusLog {
@@ -362,4 +381,75 @@ model Reminder {
 
   user        User         @relation(fields: [userId], references: [id])
   rule        ReminderRule? @relation(fields: [ruleId], references: [id])
+}
+
+model PackageTemplate {
+  id              Int              @id @default(autoincrement())
+  name            String
+  description     String?
+  serviceId       Int
+  cycleType       PackageCycleType
+  cycleDays       Int?
+  totalServices   Int
+  timeOfDay       String?
+  weekdaySchedule String?
+  address         String?
+  basePrice       Decimal
+  discountRate    Decimal          @default(100)
+  isActive        Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  service         Service          @relation(fields: [serviceId], references: [id])
+  packageOrders   PackageOrder[]
+}
+
+model PackageOrder {
+  id              Int              @id @default(autoincrement())
+  packageNo       String           @unique
+  elderlyId       Int
+  templateId      Int
+  status          PackageStatus    @default(ACTIVE)
+  startDate       DateTime
+  endDate         DateTime
+  totalServices   Int
+  usedServices    Int              @default(0)
+  remainingServices Int            @default(0)
+  totalAmount     Decimal
+  subsidyAmount   Decimal
+  personalAmount  Decimal
+  address         String
+  latitude        Decimal?
+  longitude       Decimal?
+  cycleType       PackageCycleType
+  cycleDays       Int?
+  weekdaySchedule String?
+  timeOfDay       String?
+  pausedAt        DateTime?
+  pauseReason     String?
+  renewedFromId   Int?
+  remark          String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  elderly         User             @relation(fields: [elderlyId], references: [id])
+  template        PackageTemplate  @relation(fields: [templateId], references: [id])
+  services        PackageService[]
+  renewedFrom     PackageOrder?    @relation("PackageRenewal", fields: [renewedFromId], references: [id])
+  renewedTo       PackageOrder[]   @relation("PackageRenewal")
+}
+
+model PackageService {
+  id              Int              @id @default(autoincrement())
+  packageOrderId  Int
+  serviceIndex    Int
+  scheduledTime   DateTime
+  status          PackageStatus    @default(ACTIVE)
+  orderId         Int?             @unique
+  completedAt     DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  packageOrder    PackageOrder     @relation(fields: [packageOrderId], references: [id])
+  order           Order?           @relation(fields: [orderId], references: [id])
 }

@@ -58,6 +58,86 @@ export enum ReminderType {
   GENERAL = 'GENERAL',
 }
 
+export enum PackageCycleType {
+  DAILY = 'DAILY',
+  WEEKLY = 'WEEKLY',
+  MONTHLY = 'MONTHLY',
+  CUSTOM = 'CUSTOM',
+}
+
+export enum PackageStatus {
+  ACTIVE = 'ACTIVE',
+  PAUSED = 'PAUSED',
+  COMPLETED = 'COMPLETED',
+  EXPIRED = 'EXPIRED',
+  CANCELLED = 'CANCELLED',
+}
+
+export interface PackageTemplate {
+  id: number
+  name: string
+  description?: string | null
+  serviceId: number
+  service?: Service
+  cycleType: PackageCycleType
+  cycleDays?: number | null
+  totalServices: number
+  timeOfDay?: string | null
+  weekdaySchedule?: string | null
+  address?: string | null
+  basePrice: number
+  discountRate: number
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface PackageOrder {
+  id: number
+  packageNo: string
+  elderlyId: number
+  elderly?: { id: number; name: string; phone: string }
+  templateId: number
+  template?: PackageTemplate
+  status: PackageStatus
+  startDate: string
+  endDate: string
+  totalServices: number
+  usedServices: number
+  remainingServices: number
+  totalAmount: number
+  subsidyAmount: number
+  personalAmount: number
+  address: string
+  latitude?: number | null
+  longitude?: number | null
+  cycleType: PackageCycleType
+  cycleDays?: number | null
+  weekdaySchedule?: string | null
+  timeOfDay?: string | null
+  pausedAt?: string | null
+  pauseReason?: string | null
+  renewedFromId?: number | null
+  remark?: string | null
+  services?: PackageService[]
+  createdAt: string
+  updatedAt: string
+}
+
+export interface PackageService {
+  id: number
+  packageOrderId: number
+  packageOrder?: PackageOrder
+  serviceIndex: number
+  scheduledTime: string
+  status: PackageStatus
+  orderId?: number | null
+  order?: any
+  completedAt?: string | null
+  createdAt: string
+  updatedAt: string
+}
+
 export interface HealthProfile {
   id: number
   userId: number

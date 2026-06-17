@@ -96,3 +96,111 @@ export function getRoleText(role: string): string {
   }
   return roleMap[role] || role
 }
+
+export function generatePackageNo(): string {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  const hours = String(now.getHours()).padStart(2, '0')
+  const minutes = String(now.getMinutes()).padStart(2, '0')
+  const seconds = String(now.getSeconds()).padStart(2, '0')
+  const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0')
+  return `PKG${year}${month}${day}${hours}${minutes}${seconds}${random}`
+}
+
+export function getCycleTypeText(type: string): string {
+  const typeMap: Record<string, string> = {
+    DAILY: '每日',
+    WEEKLY: '每周',
+    MONTHLY: '每月',
+    CUSTOM: '自定义'
+  }
+  return typeMap[type] || type
+}
+
+export function getPackageStatusText(status: string): string {
+  const statusMap: Record<string, string> = {
+    ACTIVE: '进行中',
+    PAUSED: '已暂停',
+    COMPLETED: '已完成',
+    EXPIRED: '已过期',
+    CANCELLED: '已取消'
+  }
+  return statusMap[status] || status
+}
+
+export function getPackageStatusColor(status: string): string {
+  const colorMap: Record<string, string> = {
+    ACTIVE: 'bg-green-100 text-green-700',
+    PAUSED: 'bg-yellow-100 text-yellow-700',
+    COMPLETED: 'bg-gray-100 text-gray-700',
+    EXPIRED: 'bg-red-100 text-red-700',
+    CANCELLED: 'bg-gray-100 text-gray-500'
+  }
+  return colorMap[status] || 'bg-gray-100 text-gray-700'
+}
+
+export function parseWeekdaySchedule(schedule: string | null | undefined): number[] {
+  if (!schedule) return []
+  return schedule.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n))
+}
+
+export function generateWeekdaySchedule(weekdays: number[]): string {
+  return weekdays.filter(n => n >= 0 && n <= 6).join(',')
+}
+
+export function getWeekdayText(day: number): string {
+  const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+  return weekdays[day] || ''
+}
+
+export function generateServiceSchedule(
+  startDate: Date,
+  endDate: Date,
+  cycleType: string,
+  cycleDays: number | null | undefined,
+  weekdaySchedule: string | null | undefined,
+  timeOfDay: string | null | undefined,
+  totalServices: number
+): Date[] {
+  const schedule: Date[] = []
+  const currentDate = new Date(startDate)
+  const weekdays = parseWeekdaySchedule(weekdaySchedule)
+  const [hourStr, minuteStr] = (timeOfDay || '09:00').split(':')
+  const hour = parseInt(hourStr, 10) || 9
+  const minute = parseInt(minuteStr, 10) || 0
+
+  currentDate.setHours(hour, minute, 0, 0)
+
+  if (cycleType === 'DAILY') {
+    while (schedule.length < totalServices && currentDate <= endDate) {
+      schedule.push(new Date(currentDate))
+      currentDate.setDate(currentDate.getDate() + 1)
+    }
+  } else if (cycleType === 'WEEKLY' || weekdays.length > 0) {
+    const days = weekdays.length > 0 ? weekdays : [1, 3, 5]
+    let maxIterations = 365 * 3
+    while (schedule.length < totalServices && currentDate <= endDate && maxIterations > 0) {
+      if (days.includes(currentDate.getDay())) {
+        schedule.push(new Date(currentDate))
+      }
+      currentDate.setDate(currentDate.getDate() + 1)
+      maxIterations--
+    }
+  } else if (cycleType === 'MONTHLY') {
+    const dayOfMonth = currentDate.getDate()
+    while (schedule.length < totalServices && currentDate <= endDate) {
+      schedule.push(new Date(currentDate))
+      currentDate.setMonth(currentDate.getMonth() + 1)
+      currentDate.setDate(Math.min(dayOfMonth, new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate()))
+    }
+  } else if (cycleType === 'CUSTOM' && cycleDays && cycleDays > 0) {
+    while (schedule.length < totalServices && currentDate <= endDate) {
+      schedule.push(new Date(currentDate))
+      currentDate.setDate(currentDate.getDate() + cycleDays)
+    }
+  }
+
+  return schedule.slice(0, totalServices)
+}

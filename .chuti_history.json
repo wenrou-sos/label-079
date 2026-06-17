@@ -1,0 +1,178 @@
+[
+    {
+        "selected_at":  "2026-06-13T09:37:12.8477517+08:00",
+        "domain":  "医疗健康",
+        "tech_stack":  "Next.js 14 + Prisma/MySQL + NextAuth",
+        "fingerprint":  "医疗健康|Feature迭代-用户管理|管理员创建编辑用户与角色分配",
+        "summary":  "用户管理页面",
+        "category":  "Feature迭代"
+    },
+    {
+        "selected_at":  "2026-06-13T09:37:28.7590788+08:00",
+        "domain":  "医疗健康",
+        "tech_stack":  "Next.js 14 + Prisma/MySQL + NextAuth",
+        "fingerprint":  "医疗健康|Feature迭代-用户管理|管理员创建编辑用户与角色分配",
+        "summary":  "用户管理页面",
+        "category":  "Feature迭代"
+    },
+    {
+        "selected_at":  "2026-06-13T10:20:00+08:00",
+        "domain":  "人力资源",
+        "tech_stack":  "React + TypeScript + Ant Design",
+        "fingerprint":  "人力资源|Web前端|面试官评价评分面板ReactAntDesign",
+        "summary":  "面试官评价与评分面板",
+        "category":  "Web 前端"
+    },
+    {
+        "selected_at":  "2026-06-13T10:30:00+08:00",
+        "domain":  "商业地产",
+        "tech_stack":  "Next.js 14 + Prisma/PostgreSQL + Tailwind CSS",
+        "fingerprint":  "商业地产|全栈Web应用|商场消防巡检设备维保NextjsPrismaPostgreSQL",
+        "summary":  "商场消防巡检与设备维保系统",
+        "category":  "全栈 Web 应用"
+    },
+    {
+        "selected_at":  "2026-06-13T10:30:00+08:00",
+        "domain":  "商业地产",
+        "tech_stack":  "Python/Streamlit + Plotly",
+        "fingerprint":  "商业地产|数据分析与可视化|商场客流量时段分析热力图StreamlitPlotly",
+        "summary":  "商场客流量时段分析与热力展示",
+        "category":  "数据分析与可视化"
+    },
+    {
+        "selected_at":  "2026-06-13T16:37:43.8569070+08:00",
+        "domain":  "医疗健康",
+        "tech_stack":  "Next.js 14 + Prisma/MySQL + Recharts",
+        "fingerprint":  "医疗健康|Feature迭代-全栈Web应用|试验详情页统计看板",
+        "summary":  "试验详情页统计看板",
+        "category":  "Feature迭代"
+    },
+    {
+        "selected_at":  "2026-06-14T00:00:00+08:00",
+        "domain":  "游戏开发",
+        "tech_stack":  "Rust/Bevy",
+        "fingerprint":  "游戏开发|游戏开发|太空射击小游戏RustBevy",
+        "summary":  "太空射击小游戏",
+        "category":  "游戏开发"
+    },
+    {
+        "selected_at":  "2026-06-15T09:53:00+08:00",
+        "domain":  "制造工业",
+        "tech_stack":  "Vue 3 + Element Plus + Node.js + Express + MySQL",
+        "fingerprint":  "制造工业|Feature迭代|生产工单不良率告警",
+        "summary":  "生产工单不良率告警",
+        "category":  "Feature迭代"
+    },
+    {
+        "selected_at":  "2026-06-15T12:00:00+08:00",
+        "domain":  "游戏开发",
+        "tech_stack":  "Python/Pygame",
+        "fingerprint":  "游戏开发|游戏开发|回收站运营模拟Pygame",
+        "summary":  "回收站运营模拟小游戏",
+        "category":  "游戏开发"
+    },
+    {
+        "selected_at":  "2026-06-15T15:51:46.0962669+08:00",
+        "domain":  "赛鸽竞翔",
+        "tech_stack":  "Vue 3 + TypeScript + Vite + Tailwind CSS",
+        "fingerprint":  "赛鸽竞翔平台|Web前端|实时统计图表",
+        "summary":  "实时统计图表（归巢趋势图、鸽舍对比柱状图、速度分布散点图）",
+        "category":  "Web 前端"
+    },
+    {
+        "fingerprint":  "动物救助|全栈Web应用|流浪动物收容领养管理NextjsPostgreSQL",
+        "domain":  "动物救助",
+        "category":  "全栈 Web 应用",
+        "summary":  "流浪动物收容所管理平台",
+        "tech_stack":  "Next.js 14 + PostgreSQL",
+        "selected_at":  "2026-06-15T16:00:00+08:00"
+    },
+    {
+        "fingerprint":  "游戏开发|游戏开发|蜜蜂采蜜模拟Pygame",
+        "domain":  "游戏开发",
+        "category":  "游戏开发",
+        "summary":  "蜜蜂采蜜模拟小游戏",
+        "tech_stack":  "Python/Pygame",
+        "selected_at":  "2026-06-15T16:30:00+08:00"
+    },
+    {
+        "fingerprint":  "媒体出版|数据分析与可视化|图书销售读者画像分析StreamlitPlotly",
+        "domain":  "媒体出版",
+        "category":  "数据分析与可视化",
+        "summary":  "图书销售数据与读者画像分析看板",
+        "tech_stack":  "Python/Streamlit + Plotly",
+        "selected_at":  "2026-06-15T17:00:00+08:00"
+    },
+    {
+        "fingerprint":  "政务公共服务|全栈Web应用|人大代表建议办理平台Nuxt3PostgreSQL",
+        "domain":  "政务公共服务",
+        "category":  "全栈 Web 应用",
+        "summary":  "人大代表建议办理全流程平台",
+        "tech_stack":  "Nuxt 3 + PostgreSQL",
+        "selected_at":  "2026-06-15T17:30:00+08:00"
+    },
+    {
+        "fingerprint":  "矿山|全栈Web应用|矿井通风网络管理RemixPostgreSQL",
+        "domain":  "矿山",
+        "category":  "全栈 Web 应用",
+        "summary":  "矿井通风系统管理平台",
+        "tech_stack":  "Remix + PostgreSQL + ECharts",
+        "selected_at":  "2026-06-15T18:00:00+08:00"
+    },
+    {
+        "fingerprint":  "租车|Web前端|门店运营管理面板Vue3",
+        "domain":  "租车",
+        "category":  "Web 前端",
+        "summary":  "租车门店运营管理面板",
+        "tech_stack":  "Vue 3 + TypeScript",
+        "selected_at":  "2026-06-15T18:30:00+08:00"
+    },
+    {
+        "fingerprint":  "餐饮|全栈Web应用|连锁餐厅中央厨房供应链NextjsPostgreSQL",
+        "domain":  "餐饮",
+        "category":  "全栈 Web 应用",
+        "summary":  "连锁餐厅中央厨房与供应链平台",
+        "tech_stack":  "Next.js 14 + PostgreSQL",
+        "selected_at":  "2026-06-15T19:00:00+08:00"
+    },
+    {
+        "fingerprint": "医疗健康|Feature迭代|结算单导出CSV",
+        "domain": "医疗健康",
+        "category": "Feature迭代",
+        "summary": "结算单导出CSV",
+        "tech_stack": "Next.js 16 + React 19 + TypeScript + TailwindCSS 4",
+        "selected_at": "2026-06-16T00:00:00+08:00"
+    },
+    {
+        "fingerprint": "餐饮|Feature迭代|等位趋势实时图表",
+        "domain": "餐饮",
+        "category": "Feature迭代",
+        "summary": "等位趋势实时图表",
+        "tech_stack": "Vue 3 + TypeScript + Pinia + Tailwind CSS + Chart.js",
+        "selected_at": "2026-06-16T08:00:00+08:00"
+    },
+    {
+        "fingerprint": "餐饮|Feature迭代|预订桌台自动分配",
+        "domain": "餐饮",
+        "category": "Feature迭代",
+        "summary": "预订桌台自动分配",
+        "tech_stack": "Vue 3 + TypeScript + Pinia + Tailwind CSS",
+        "selected_at": "2026-06-16T08:20:00+08:00"
+    },
+    {
+        "fingerprint": "医疗健康|Feature迭代|效期预警全局通知",
+        "domain": "医疗健康",
+        "category": "Feature迭代",
+        "summary": "效期预警全局通知",
+        "tech_stack": "Next.js 16 + React 19 + TypeScript + TailwindCSS 4",
+        "selected_at": "2026-06-16T10:30:00+08:00"
+    },
+    {
+        "fingerprint": "餐饮|Feature迭代|等候区叫号看板",
+        "domain": "餐饮",
+        "category": "Feature迭代",
+        "summary": "等候区叫号看板",
+        "tech_stack": "Vue 3 + TypeScript + Pinia + Tailwind CSS",
+        "selected_at": "2026-06-16T10:45:00+08:00"
+    }
+]
